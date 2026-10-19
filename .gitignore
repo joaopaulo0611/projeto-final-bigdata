@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+saida/
+dados/
+camadas/
+spark-warehouse/
+*.jsonl
+*.zip
+.env
+.tmp/
+site/mapa_calor.js
+site/mapa_calor.js.tmp
+.explorador/
+dist/

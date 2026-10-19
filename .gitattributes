@@ -1,0 +1,4 @@
+* text=auto eol=lf
+professor/ export-ignore
+docs/specs/ export-ignore
+docs/superpowers/ export-ignore

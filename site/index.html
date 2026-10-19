@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formação em Análise de Dados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   Landing page hipotética do projeto final de tracking.
+   Nada aqui é enviado a servidor: cada evento vai para window.dataLayer
+   e para o painel lateral, no mesmo contrato JSON que o gerador
+   sintético (00_gerar_eventos.py) grava na landing do datalake.
+   ------------------------------------------------------------------ */
+:root {
+  --bg: #f7f7fb; --surface: #ffffff; --surface-2: #eef0f7; --text: #161827;
+  --muted: #5d6178; --border: #dfe2ee; --brand: #4f46e5; --brand-2: #7c3aed;
+  --brand-text: #ffffff; --ok: #0f9d58; --warn: #c2410c; --danger: #dc2626;
+  --code-bg: #0f1222; --code-text: #d7dbf5; --shadow: 0 10px 30px rgba(22,24,39,.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0f1a; --surface: #151829; --surface-2: #1d2136; --text: #eceefb;
+    --muted: #a0a5c2; --border: #2a2f4a; --brand: #818cf8; --brand-2: #a78bfa;
+    --brand-text: #0d0f1a; --code-bg: #090b14; --code-text: #d7dbf5; --shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0f1a; --surface: #151829; --surface-2: #1d2136; --text: #eceefb;
+  --muted: #a0a5c2; --border: #2a2f4a; --brand: #818cf8; --brand-2: #a78bfa;
+  --brand-text: #0d0f1a; --code-bg: #090b14; --code-text: #d7dbf5; --shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 16px/1.55 Inter, system-ui, sans-serif; }
+a { color: var(--brand); }
+button, input, select { font: inherit; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+main { padding-right: 0; transition: padding .2s; }
+body.painel-aberto main, body.painel-aberto .topo { padding-right: 400px; }
+@media (max-width: 900px) { body.painel-aberto main, body.painel-aberto .topo { padding-right: 0; } }
+
+.topo { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+.topo .wrap { display: flex; align-items: center; gap: 12px; height: 60px; }
+.logo { font-weight: 800; letter-spacing: -.02em; text-decoration: none; color: var(--text); }
+.logo span { color: var(--brand); }
+.topo nav { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.btn { border: 0; border-radius: 10px; padding: 10px 18px; cursor: pointer; font-weight: 600; background: var(--brand); color: var(--brand-text); text-decoration: none; display: inline-block; }
+.btn.sec { background: var(--surface-2); color: var(--text); }
+.btn.grande { padding: 14px 26px; font-size: 1.05rem; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; letter-spacing: -.03em; margin: 0 0 16px; }
+h2 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); letter-spacing: -.02em; margin: 0 0 8px; }
+.sub { color: var(--muted); font-size: 1.1rem; max-width: 640px; }
+.etiqueta { display: inline-block; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--brand); margin-bottom: 10px; }
+.hero { padding: 80px 0 64px; }
+.hero .acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+
+.grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-top: 28px; }
+.cartao { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
+.cartao h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.cartao p { margin: 0; color: var(--muted); font-size: .95rem; }
+
+.player { position: relative; aspect-ratio: 16/9; background: linear-gradient(135deg, var(--brand), var(--brand-2)); border-radius: 18px; overflow: hidden; margin-top: 24px; color: #fff; display: grid; place-items: center; box-shadow: var(--shadow); }
+.player .tocar { width: 84px; height: 84px; border-radius: 50%; border: 0; background: rgba(255,255,255,.95); color: #4f46e5; font-size: 2rem; cursor: pointer; }
+.player .legenda { position: absolute; left: 20px; top: 16px; font-weight: 600; opacity: .9; }
+.player .barra { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: rgba(255,255,255,.25); }
+.player .barra i { display: block; height: 100%; width: 0; background: #fff; }
+.player .tempo { position: absolute; right: 16px; bottom: 16px; font: 500 .85rem "JetBrains Mono", monospace; }
+
+.planos { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 28px; }
+.plano { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow); }
+.plano.destaque { border: 2px solid var(--brand); }
+.plano .preco { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; }
+.plano .preco small { display: block; font-size: .9rem; color: var(--muted); font-weight: 500; }
+.plano ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: .95rem; flex: 1; }
+.plano .acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.lead { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+.lead input { flex: 1 1 240px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+
+.faq-busca { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); margin-top: 16px; }
+details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-top: 10px; }
+details summary { cursor: pointer; font-weight: 600; }
+details p { color: var(--muted); margin: 10px 0 0; }
+.vazio { color: var(--warn); margin-top: 12px; display: none; }
+
+footer { padding: 40px 0 80px; color: var(--muted); font-size: .92rem; }
+footer .redes { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+
+.passo { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-top: 16px; }
+.passo h3 { margin: 0 0 12px; }
+.passo.bloqueado { opacity: .45; pointer-events: none; }
+.linha { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.linha:last-child { border-bottom: 0; font-weight: 700; }
+.opcoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.opcoes label { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer; background: var(--surface-2); }
+.campo { display: block; width: 100%; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); margin: 6px 0 12px; }
+
+.modal-fundo { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; place-items: center; z-index: 50; padding: 16px; }
+.modal-fundo.aberto { display: grid; }
+.modal { background: var(--surface); border-radius: 18px; padding: 26px; max-width: 480px; width: 100%; box-shadow: var(--shadow); }
+.modal h3 { margin-top: 0; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 10px; font-size: .92rem; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 60; }
+.toast.on { opacity: 1; }
+
+/* ---------- painel de eventos ---------- */
+.painel { position: fixed; top: 0; right: 0; bottom: 0; width: 400px; background: var(--code-bg); color: var(--code-text); z-index: 40; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .2s; font: 13px/1.45 "JetBrains Mono", monospace; }
+body.painel-aberto .painel { transform: none; }
+@media (max-width: 900px) { .painel { width: 100%; top: auto; height: 55vh; transform: translateY(100%); } }
+.painel header { padding: 14px 16px; border-bottom: 1px solid #23284a; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.painel header strong { font-family: Inter, sans-serif; font-size: .95rem; color: #fff; margin-right: auto; }
+.painel header button, .painel header select { background: #1d2242; color: var(--code-text); border: 1px solid #2d3360; border-radius: 8px; padding: 5px 9px; cursor: pointer; font: 12px Inter, sans-serif; }
+.painel .ctx { padding: 8px 16px; border-bottom: 1px solid #23284a; color: #8f96c9; font-size: 11.5px; word-break: break-all; }
+.painel ol { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
+.painel li { border-bottom: 1px solid #1b1f3a; }
+.painel li > button { all: unset; display: flex; gap: 8px; width: 100%; box-sizing: border-box; padding: 8px 16px; cursor: pointer; }
+.painel li > button:hover { background: #151a35; }
+.painel .nome { font-weight: 500; }
+.painel .hora { margin-left: auto; color: #6c73a8; }
+.painel pre { margin: 0; padding: 8px 16px 12px; white-space: pre-wrap; word-break: break-all; color: #b9c0f0; display: none; }
+.painel li.aberto pre { display: block; }
+.fam-eng { color: #7dd3fc; } .fam-com { color: #fbbf24; } .fam-aq { color: #86efac; }
+.alternar-painel { position: fixed; right: 16px; bottom: 16px; z-index: 45; border-radius: 999px; padding: 10px 16px; border: 0; background: var(--code-bg); color: #fff; cursor: pointer; font: 600 .9rem Inter, sans-serif; box-shadow: var(--shadow); }
+body.painel-aberto .alternar-painel { right: 416px; }
+@media (max-width: 900px) { body.painel-aberto .alternar-painel { right: 16px; bottom: calc(55vh + 12px); } }
+
+[hidden] { display: none !important; }
+/* ---------------- mapa de calor (overlay; não recebe cliques) ---------------- */
+#calor-raiz { position: absolute; left: 0; top: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+.calor-canvas { position: absolute; z-index: 30; pointer-events: none; }
+.calor-fixo { position: fixed; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none; z-index: 21; }
+.calor-fixo-modal { z-index: 51; }
+.calor-etiqueta { position: absolute; z-index: 31; pointer-events: none; background: #fff; color: #0f172a; border: 1px solid #1e3a8a; font: 700 10px/1.3 system-ui, sans-serif; padding: 0 4px; white-space: nowrap; }
+.calor-faixa { position: absolute; z-index: 31; width: 72px; pointer-events: none; border-left: 1px solid rgba(255,255,255,.35); }
+.calor-marco { position: absolute; right: 6px; transform: translateY(-50%); background: #fff; color: #0f172a; border: 1px solid #1e3a8a; font: 700 10px/1.3 system-ui, sans-serif; padding: 0 4px; white-space: nowrap; }
+#mapa-calor.ligado { background: #b91c1c; color: #fff; }
+</style>
+</head>
+<body class="painel-aberto">
+
+<header class="topo">
+  <div class="wrap">
+    <a class="logo" href="#/" data-cta="logo" data-heat="cta-logo">Dados<span>Pro</span></a>
+    <nav>
+      <a class="btn sec" href="#/membros" id="link-membros">Área de membros</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ======================= LANDING ======================= -->
+<div data-view="landing">
+  <section class="hero">
+    <div class="wrap">
+      <span class="etiqueta">Turma de novembro · vagas limitadas</span>
+      <h1>Formação em Análise de Dados: do SQL ao Spark em 12 semanas</h1>
+      <p class="sub">Projetos reais, mentoria semanal e certificado. Garantia incondicional de 7 dias.</p>
+      <div class="acoes">
+        <a class="btn grande" href="#planos" data-cta="hero_ver_planos" data-heat="cta-hero-ver-planos">Ver planos</a>
+        <a class="btn grande sec" href="#vsl" data-cta="hero_assistir" data-heat="cta-hero-assistir">Assistir apresentação</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="vsl">
+    <div class="wrap">
+      <span class="etiqueta">Apresentação</span>
+      <h2>Em 4 minutos, o que você vai construir</h2>
+      <p class="sub">O vídeo é simulado: corre 10× mais rápido e dispara <code>video_start</code>, <code>video_progress</code> (10/25/50/75%) e <code>video_complete</code>.</p>
+      <div class="player" id="player">
+        <span class="legenda">VSL · Formação em Análise de Dados</span>
+        <button class="tocar" id="btn-play" data-heat="btn-play" aria-label="Reproduzir">▶</button>
+        <span class="tempo" id="tempo">0:00 / 4:00</span>
+        <div class="barra"><i id="barra"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="modulos">
+    <div class="wrap">
+      <span class="etiqueta">Conteúdo</span>
+      <h2>Seis módulos, um projeto por módulo</h2>
+      <div class="grade">
+        <div class="cartao"><h3>1 · SQL analítico</h3><p>Janelas, CTEs e modelagem dimensional.</p></div>
+        <div class="cartao"><h3>2 · Python para dados</h3><p>pandas, limpeza e testes de qualidade.</p></div>
+        <div class="cartao"><h3>3 · Bancos distribuídos</h3><p>PACELC na prática, com falha de rede de verdade.</p></div>
+        <div class="cartao"><h3>4 · PySpark</h3><p>DataFrames, partições e o plano que o Spark reescreve.</p></div>
+        <div class="cartao"><h3>5 · Datalake medalhão</h3><p>Bronze, Silver e Gold em S3.</p></div>
+        <div class="cartao"><h3>6 · Spark ML</h3><p>Classificação, regressão e clusterização.</p></div>
+      </div>
+      <p style="margin-top:20px"><a href="#" id="dl-ementa" data-heat="dl-ementa">⬇ Baixar ementa completa (PDF)</a></p>
+    </div>
+  </section>
+
+  <section id="depoimentos">
+    <div class="wrap">
+      <span class="etiqueta">Depoimentos</span>
+      <h2>Quem já passou por aqui</h2>
+      <div class="grade">
+        <div class="cartao"><p>“O módulo de medalhão foi o que me fez passar na entrevista técnica.”</p><h3 style="margin-top:10px">Aluna da turma 3</h3></div>
+        <div class="cartao"><p>“Finalmente entendi por que meu join explodia em produção.”</p><h3 style="margin-top:10px">Aluno da turma 5</h3></div>
+        <div class="cartao"><p>“A mentoria semanal vale o plano Pro sozinha.”</p><h3 style="margin-top:10px">Aluna da turma 6</h3></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="planos">
+    <div class="wrap">
+      <span class="etiqueta">Planos</span>
+      <h2>Escolha seu plano</h2>
+      <p class="sub">Exibir esta tabela dispara <code>view_item_list</code>; “Ver detalhes” dispara <code>select_item</code> + <code>view_item</code>.</p>
+      <div class="planos" id="lista-planos"></div>
+    </div>
+  </section>
+
+  <section id="ebook">
+    <div class="wrap">
+      <span class="etiqueta">Material gratuito</span>
+      <h2>Ainda não é a hora? Leve o e-book “Primeiro pipeline em PySpark”</h2>
+      <p class="sub">O e-mail nunca entra no evento. Só vai <code>lead_source</code>: dado pessoal não pertence ao datalake de tracking.</p>
+      <form class="lead" id="form-lead" data-heat="form-lead">
+        <input type="email" required placeholder="seu@email.com" aria-label="E-mail">
+        <button class="btn" type="submit">Quero o e-book</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="garantia">
+    <div class="wrap">
+      <span class="etiqueta">Garantia</span>
+      <h2>7 dias para desistir, sem perguntas</h2>
+      <p class="sub">Pediu reembolso dentro do prazo e o valor volta integralmente. No datalake, isso é um <code>refund</code>, e a receita líquida precisa descontá-lo.</p>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <span class="etiqueta">Dúvidas</span>
+      <h2>Perguntas frequentes</h2>
+      <input class="faq-busca" id="faq-busca" data-heat="faq-busca" type="search" placeholder="Busque no FAQ e pressione Enter (ex.: certificado, parcelar, linux)">
+      <div id="faq-lista">
+        <details><summary>Tem certificado?</summary><p>Sim, com carga horária de 180 horas.</p></details>
+        <details><summary>Posso parcelar?</summary><p>Em até 12× no cartão, ou com 5% de desconto no Pix.</p></details>
+        <details><summary>Preciso saber programar?</summary><p>Não. O módulo 2 começa do zero em Python.</p></details>
+        <details><summary>Por quanto tempo tenho acesso?</summary><p>Básico: 1 ano. Pro e Premium: vitalício.</p></details>
+        <details><summary>Como funciona a apostila impressa?</summary><p>Só no Premium: enviada pelos Correios (PAC ou SEDEX) após a compra.</p></details>
+        <details><summary>Como peço reembolso?</summary><p>Na página de confirmação do pedido, em até 7 dias.</p></details>
+      </div>
+      <p class="vazio" id="faq-vazio">Nenhuma pergunta encontrada. Este termo vai para o datalake como lacuna de conteúdo.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      DadosPro · Landing page hipotética do projeto final de tracking. Nenhum dado sai do seu navegador.
+      <div class="redes">
+        <a href="https://instagram.com/dadospro" data-saida data-heat="social-instagram">Instagram</a>
+        <a href="https://youtube.com/@dadospro" data-saida data-heat="social-youtube">YouTube</a>
+        <a href="https://wa.me/5548999999999" data-saida data-heat="social-whatsapp">WhatsApp</a>
+        <a href="https://linkedin.com/company/dadospro" data-saida data-heat="social-linkedin">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ======================= CHECKOUT ======================= -->
+<div data-view="checkout" hidden>
+  <section>
+    <div class="wrap" style="max-width:720px">
+      <span class="etiqueta">Checkout</span>
+      <h2>Finalize sua inscrição</h2>
+
+      <div class="passo">
+        <h3>Resumo do pedido</h3>
+        <div id="resumo"></div>
+        <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;cursor:pointer" data-heat="bump">
+          <input type="checkbox" id="bump">
+          <span><strong>Adicionar Mentoria em grupo (+ R$ 147,00)</strong><br><small style="color:var(--muted)">Order bump: marcar dispara <code>add_to_cart</code>; desmarcar dispara <code>remove_from_cart</code>.</small></span>
+        </label>
+        <p style="margin:14px 0 0"><a href="#/" id="trocar-plano">← trocar de plano</a></p>
+      </div>
+
+      <div class="passo" id="passo-dados">
+        <h3>1 · Seus dados</h3>
+        <input class="campo" id="ck-nome" placeholder="Nome completo" autocomplete="off">
+        <input class="campo" id="ck-email" type="email" placeholder="E-mail de acesso" autocomplete="off">
+        <button class="btn" id="btn-continuar" data-heat="btn-continuar">Continuar</button>
+      </div>
+
+      <div class="passo bloqueado" id="passo-frete" hidden>
+        <h3>2 · Entrega da apostila impressa</h3>
+        <div class="opcoes">
+          <label data-heat="frete-pac"><input type="radio" name="frete" value="PAC"> PAC · R$ 24,90 · 8 dias úteis</label>
+          <label data-heat="frete-sedex"><input type="radio" name="frete" value="SEDEX"> SEDEX · R$ 49,90 · 3 dias úteis</label>
+        </div>
+      </div>
+
+      <div class="passo bloqueado" id="passo-pagto">
+        <h3 id="titulo-pagto">2 · Pagamento</h3>
+        <div class="opcoes">
+          <label data-heat="pagto-pix"><input type="radio" name="pagto" value="pix"> Pix (5% off)</label>
+          <label data-heat="pagto-cartao-avista"><input type="radio" name="pagto" value="cartao_avista"> Cartão à vista</label>
+          <label data-heat="pagto-cartao-parcelado"><input type="radio" name="pagto" value="cartao_parcelado"> Cartão 12×</label>
+        </div>
+        <p style="color:var(--muted);font-size:.9rem">Simulação: nenhum dado de pagamento é pedido nem gravado.</p>
+        <button class="btn grande" id="btn-comprar" data-heat="btn-comprar" disabled>Finalizar compra</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ======================= OBRIGADO ======================= -->
+<div data-view="obrigado" hidden>
+  <section>
+    <div class="wrap" style="max-width:720px">
+      <span class="etiqueta">Pedido confirmado</span>
+      <h2>Bem-vindo à Formação! 🎉</h2>
+      <p class="sub" id="obrigado-texto"></p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+        <a class="btn" href="#/membros">Criar acesso à área de membros</a>
+        <button class="btn sec" id="btn-refund" data-heat="btn-refund">Solicitar reembolso (garantia de 7 dias)</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ======================= MEMBROS ======================= -->
+<div data-view="membros" hidden>
+  <section>
+    <div class="wrap" style="max-width:520px">
+      <span class="etiqueta">Área de membros</span>
+      <h2 id="membros-titulo">Entrar ou criar conta</h2>
+      <div id="membros-form">
+        <input class="campo" id="mb-email" type="email" placeholder="E-mail" autocomplete="off">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn" id="btn-login" data-heat="btn-login">Entrar</button>
+          <button class="btn sec" id="btn-signup" data-heat="btn-signup">Criar conta</button>
+        </div>
+        <p style="color:var(--muted);font-size:.9rem;margin-top:14px">O e-mail vira um <code>user_id</code> pseudonimizado (hash). Daí em diante, todo evento carrega esse <code>user_id</code>, e a Silver usa isso para o identity stitching.</p>
+      </div>
+      <div id="membros-logado" hidden>
+        <p class="sub">Você está logado como <code id="mb-uid"></code>.</p>
+        <button class="btn sec" id="btn-sair">Sair</button>
+      </div>
+    </div>
+  </section>
+</div>
+</main>
+
+<!-- modal de detalhe do plano -->
+<div class="modal-fundo" id="modal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="modal-titulo"></h3>
+    <p id="modal-desc" style="color:var(--muted)"></p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="modal-comprar" data-heat="modal-comprar">Quero este plano</button>
+      <button class="btn sec" id="modal-fechar">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<button class="alternar-painel" id="alternar-painel">Eventos (<span id="contador">0</span>)</button>
+
+<aside class="painel" aria-label="Eventos de tracking">
+  <header>
+    <strong>dataLayer</strong>
+    <select id="canal" title="Simula o canal de origem (UTM)">
+      <option value="direct|(none)|">direct / (none)</option>
+      <option value="google|cpc|formacao_dados">google / cpc</option>
+      <option value="google|organic|">google / organic</option>
+      <option value="instagram|paid_social|lancamento_nov">instagram / paid_social</option>
+      <option value="newsletter|email|ebook_nutricao">newsletter / email</option>
+    </select>
+    <button id="exportar">Exportar JSONL</button>
+    <button id="mapa-calor" title="Liga/desliga o mapa de calor da Gold (site/mapa_calor.js)">Mapa de calor</button>
+    <button id="nova-sessao" title="Novo visitante anônimo">Novo visitante</button>
+    <button id="limpar">Limpar</button>
+  </header>
+  <div class="ctx" id="ctx"></div>
+  <ol id="lista-eventos"></ol>
+</aside>
+
+<script src="mapa_calor.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---------------- armazenamento seguro ----------------
+  function ler(chave) { try { return localStorage.getItem(chave); } catch (e) { return null; } }
+  function gravar(chave, valor) { try { valor === null ? localStorage.removeItem(chave) : localStorage.setItem(chave, valor); } catch (e) {} }
+
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0; return (c === "x" ? r : (r & 3 | 8)).toString(16);
+    });
+  }
+  function hashCurto(texto) { // FNV-1a: só para pseudonimizar o e-mail na demo
+    var h = 0x811c9dc5;
+    for (var i = 0; i < texto.length; i++) { h ^= texto.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return ("00000000" + (h >>> 0).toString(16)).slice(-8);
+  }
+  function brl(v) { return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+  function arred(v) { return Math.round(v * 100) / 100; }
+
+  // ---------------- catálogo ----------------
+  var PLANOS = [
+    { item_id: "PLANO-BASICO",  item_name: "Plano Básico",  item_category: "plano", price: 297.00, heat: "plano-basico",
+      itens: ["Acesso por 1 ano", "6 módulos gravados", "Certificado"] },
+    { item_id: "PLANO-PRO",     item_name: "Plano Pro",     item_category: "plano", price: 597.00, heat: "plano-pro", destaque: true,
+      itens: ["Acesso vitalício", "Mentoria semanal ao vivo", "Revisão de projetos", "Certificado"] },
+    { item_id: "PLANO-PREMIUM", item_name: "Plano Premium", item_category: "plano", price: 997.00, heat: "plano-premium",
+      itens: ["Tudo do Pro", "Apostila impressa enviada pelos Correios", "Sessão 1:1 de carreira"] }
+  ];
+  var BUMP = { item_id: "BUMP-MENTORIA", item_name: "Mentoria em grupo", item_category: "order_bump", price: 147.00 };
+  var FRETE = { PAC: 24.90, SEDEX: 49.90 };
+  var ALIQUOTA_ISS = 0.05;
+  var LISTA = { item_list_id: "tabela_planos", item_list_name: "Tabela de planos" };
+
+  function item(p, extra) {
+    var o = { item_id: p.item_id, item_name: p.item_name, item_category: p.item_category, price: p.price, quantity: 1 };
+    for (var k in extra) o[k] = extra[k];
+    return o;
+  }
+
+  // ---------------- identidade e contexto ----------------
+  var estado = {
+    pseudo: ler("lp_pseudo") || ("anon-" + uuid().slice(0, 8)),
+    userId: ler("lp_user_id"),
+    sessao: "s-" + uuid().slice(0, 8),
+    canal: ler("lp_canal") || "direct|(none)|",
+    carrinho: [],
+    plano: null,
+    ultimaCompra: null,
+    pedidoReembolsado: false
+  };
+  gravar("lp_pseudo", estado.pseudo);
+  var eventos = [];
+
+  function trafego() {
+    var p = estado.canal.split("|");
+    return { source: p[0], medium: p[1], campaign: p[2] || null };
+  }
+  function dispositivo() {
+    var ua = navigator.userAgent, w = window.innerWidth;
+    var os = /Android/i.test(ua) ? "Android" : /iPhone|iPad/i.test(ua) ? "iOS" : /Windows/i.test(ua) ? "Windows" : /Mac/i.test(ua) ? "macOS" : "Linux";
+    var nav = /Edg\//.test(ua) ? "Edge" : /Firefox/.test(ua) ? "Firefox" : /Chrome/.test(ua) ? "Chrome" : /Safari/.test(ua) ? "Safari" : "Outro";
+    return { category: w < 768 ? "mobile" : w < 1024 ? "tablet" : "desktop", os: os, browser: nav };
+  }
+  function urlAtual() {
+    var rota = location.hash.replace(/^#\/?/, "").split("#")[0];
+    return "https://loja.exemplo/" + (VIEWS.indexOf(rota) > 0 ? rota : "");
+  }
+
+  // ---------------- o coração: track() ----------------
+  var FAMILIA = {
+    page_view: "eng", scroll: "eng", click: "eng", site_search: "eng", video_start: "eng",
+    video_progress: "eng", video_complete: "eng", file_download: "eng",
+    view_item_list: "com", select_item: "com", view_item: "com", add_to_cart: "com",
+    remove_from_cart: "com", view_cart: "com", begin_checkout: "com", add_shipping_info: "com",
+    add_payment_info: "com", purchase: "com", refund: "com",
+    generate_lead: "aq", sign_up: "aq", login: "aq"
+  };
+  var ultimaUrl = document.referrer || null;   // página anterior à atual
+  var referrerDaPagina = ultimaUrl;            // referrer vale para todos os eventos da mesma página
+
+  function track(nome, params, itens) {
+    var ev = {
+      event_id: uuid(),
+      event_name: nome,
+      event_ts: new Date().toISOString(),
+      user_pseudo_id: estado.pseudo,
+      user_id: estado.userId || null,
+      session_hint: estado.sessao,
+      page: { location: urlAtual(), referrer: referrerDaPagina },
+      traffic: trafego(),
+      device: dispositivo(),
+      params: params || {},
+      items: itens || []
+    };
+    window.dataLayer.push(ev);
+    eventos.push(ev);
+    desenharEvento(ev);
+    return ev;
+  }
+  // element_id = data-heat do elemento clicado (ou do ancestral mais próximo)
+  function comElemento(params, el) {
+    var alvo = el && el.closest ? el.closest("[data-heat]") : null;
+    if (alvo) params.element_id = alvo.getAttribute("data-heat");
+    return params;
+  }
+  window.dataLayer = window.dataLayer || [];
+
+  // ---------------- painel ----------------
+  var $lista = document.getElementById("lista-eventos");
+  function desenharEvento(ev) {
+    var li = document.createElement("li");
+    var bt = document.createElement("button");
+    var nome = document.createElement("span");
+    nome.className = "nome fam-" + (FAMILIA[ev.event_name] || "eng");
+    nome.textContent = ev.event_name;
+    var hora = document.createElement("span");
+    hora.className = "hora";
+    hora.textContent = ev.event_ts.slice(11, 19);
+    bt.appendChild(nome); bt.appendChild(hora);
+    var pre = document.createElement("pre");
+    pre.textContent = JSON.stringify(ev, null, 2);
+    bt.addEventListener("click", function () { li.classList.toggle("aberto"); });
+    li.appendChild(bt); li.appendChild(pre);
+    $lista.insertBefore(li, $lista.firstChild);
+    document.getElementById("contador").textContent = eventos.length;
+  }
+  function desenharContexto() {
+    document.getElementById("ctx").textContent =
+      "user_pseudo_id=" + estado.pseudo + "  user_id=" + (estado.userId || "null") + "  session_hint=" + estado.sessao;
+  }
+  desenharContexto();
+
+  document.getElementById("alternar-painel").addEventListener("click", function () {
+    document.body.classList.toggle("painel-aberto");
+  });
+  if (window.innerWidth < 900) document.body.classList.remove("painel-aberto");
+
+  var $canal = document.getElementById("canal");
+  $canal.value = estado.canal;
+  $canal.addEventListener("change", function () {
+    estado.canal = $canal.value; gravar("lp_canal", estado.canal);
+    toast("Canal simulado: " + $canal.options[$canal.selectedIndex].text);
+  });
+  document.getElementById("limpar").addEventListener("click", function () {
+    eventos = []; window.dataLayer.length = 0; $lista.innerHTML = "";
+    document.getElementById("contador").textContent = "0";
+  });
+  document.getElementById("nova-sessao").addEventListener("click", function () {
+    estado.pseudo = "anon-" + uuid().slice(0, 8); estado.userId = null; estado.sessao = "s-" + uuid().slice(0, 8);
+    gravar("lp_pseudo", estado.pseudo); gravar("lp_user_id", null);
+    desenharContexto(); atualizarMembros(); toast("Novo visitante anônimo");
+    location.hash = "#/";
+  });
+  document.getElementById("exportar").addEventListener("click", function () {
+    if (!eventos.length) { toast("Nenhum evento para exportar"); return; }
+    var jsonl = eventos.map(function (e) { return JSON.stringify(e); }).join("\n") + "\n";
+    var blob = new Blob([jsonl], { type: "application/x-ndjson" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "eventos_" + new Date().toISOString().slice(0, 10) + ".jsonl";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  var tToast;
+  function toast(msg) {
+    var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("on");
+    clearTimeout(tToast); tToast = setTimeout(function () { t.classList.remove("on"); }, 2200);
+  }
+
+  // ---------------- roteamento (cada view = page_view) ----------------
+  var VIEWS = ["landing", "checkout", "obrigado", "membros"];
+  var scrollMarcos = {};
+  var listaVista = false;
+
+  function rotaAtual() {
+    var r = location.hash.replace(/^#\/?/, "");
+    return VIEWS.indexOf(r) > 0 ? r : "landing";
+  }
+  function irPara(inicial) {
+    var hash = location.hash;
+    if (inicial !== true && hash && hash.charAt(1) !== "/" && hash !== "#") return; // âncora dentro da landing
+    var rota = rotaAtual();
+    if (rota === "checkout" && !estado.plano) { location.hash = "#/"; return; }
+    if (rota === "obrigado" && !estado.ultimaCompra) { location.hash = "#/"; return; }
+    VIEWS.forEach(function (v) {
+      document.querySelector('[data-view="' + v + '"]').hidden = v !== rota;
+    });
+    window.scrollTo(0, 0);
+    scrollMarcos = {}; listaVista = false;
+    referrerDaPagina = ultimaUrl;
+    track("page_view", { page_title: document.title + " · " + rota });
+    ultimaUrl = urlAtual();
+    if (rota === "landing") observarLista();
+    if (rota === "checkout") entrarCheckout();
+    if (rota === "obrigado") entrarObrigado();
+    if (rota === "membros") atualizarMembros();
+  }
+  window.addEventListener("hashchange", irPara);
+
+  // ---------------- scroll (25/50/75/90, uma vez por page_view) ----------------
+  var tScroll;
+  window.addEventListener("scroll", function () {
+    clearTimeout(tScroll);
+    tScroll = setTimeout(function () {
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      if (max <= 0) return;
+      var pct = (window.scrollY / max) * 100;
+      [25, 50, 75, 90].forEach(function (m) {
+        if (pct >= m && !scrollMarcos[m]) {
+          scrollMarcos[m] = true;
+          track("scroll", { percent_scrolled: m });
+        }
+      });
+    }, 120);
+  }, { passive: true });
+
+  // ---------------- click: CTAs internos e saídas ----------------
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest("a");
+    if (!a) return;
+    if (a.hasAttribute("data-saida")) {
+      e.preventDefault();
+      var url = new URL(a.href);
+      track("click", comElemento({ link_url: a.href, link_domain: url.hostname, link_text: a.textContent.trim(), outbound: true }, a));
+      toast("Saída para " + url.hostname + " (simulada)");
+    } else if (a.hasAttribute("data-cta")) {
+      track("click", comElemento({ link_url: a.href, link_text: a.textContent.trim(), link_id: a.getAttribute("data-cta"), outbound: false }, a));
+    }
+  });
+
+  // ---------------- file_download ----------------
+  document.getElementById("dl-ementa").addEventListener("click", function (e) {
+    e.preventDefault();
+    track("file_download", comElemento({ file_name: "ementa-formacao-dados.pdf", file_extension: "pdf", link_url: "https://loja.exemplo/arquivos/ementa-formacao-dados.pdf" }, this));
+    toast("Download da ementa (simulado)");
+  });
+
+  // ---------------- vídeo (VSL simulado, 240 s a 10×) ----------------
+  var DURACAO = 240, video = { t: 0, tocando: false, timer: null, marcos: {}, iniciado: false };
+  var $play = document.getElementById("btn-play");
+  function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ":" + ("0" + s % 60).slice(-2); }
+  function paramsVideo(pct) {
+    var p = { video_title: "VSL Formação em Análise de Dados", video_provider: "self_hosted", video_duration: DURACAO, video_current_time: Math.floor(video.t) };
+    if (pct !== undefined) p.video_percent = pct;
+    return p;
+  }
+  function tick() {
+    video.t = Math.min(DURACAO, video.t + 1);
+    var pct = (video.t / DURACAO) * 100;
+    document.getElementById("barra").style.width = pct + "%";
+    document.getElementById("tempo").textContent = fmt(video.t) + " / " + fmt(DURACAO);
+    [10, 25, 50, 75].forEach(function (m) {
+      if (pct >= m && !video.marcos[m]) { video.marcos[m] = true; track("video_progress", paramsVideo(m)); }
+    });
+    if (video.t >= DURACAO) {
+      clearInterval(video.timer); video.tocando = false; $play.textContent = "↺";
+      track("video_complete", paramsVideo(100));
+    }
+  }
+  $play.addEventListener("click", function () {
+    if (video.tocando) { clearInterval(video.timer); video.tocando = false; $play.textContent = "▶"; return; }
+    if (video.t >= DURACAO) { video.t = 0; video.marcos = {}; video.iniciado = false; }
+    if (!video.iniciado) { video.iniciado = true; track("video_start", comElemento(paramsVideo(0), $play)); }
+    video.tocando = true; $play.textContent = "❚❚";
+    video.timer = setInterval(tick, 100);
+  });
+
+  // ---------------- planos: view_item_list / select_item / view_item ----------------
+  var $planos = document.getElementById("lista-planos");
+  PLANOS.forEach(function (p, i) {
+    var div = document.createElement("div");
+    div.className = "plano" + (p.destaque ? " destaque" : "");
+    div.setAttribute("data-heat", p.heat);
+    div.innerHTML =
+      (p.destaque ? '<span class="etiqueta" style="margin:0">Mais escolhido</span>' : "") +
+      "<h3 style=\"margin:0\">" + p.item_name + "</h3>" +
+      '<div class="preco">' + brl(p.price) + " <small>ou 12× de " + brl(arred(p.price / 12)) + "</small></div>" +
+      "<ul>" + p.itens.map(function (t) { return "<li>" + t + "</li>"; }).join("") + "</ul>" +
+      '<div class="acoes"><button class="btn" data-comprar="' + i + '">Quero este plano</button>' +
+      '<button class="btn sec" data-detalhe="' + i + '">Ver detalhes</button></div>';
+    $planos.appendChild(div);
+  });
+  function itensLista() {
+    return PLANOS.map(function (p, i) { return item(p, { index: i, item_list_id: LISTA.item_list_id, item_list_name: LISTA.item_list_name }); });
+  }
+  var observador = null;
+  function observarLista() {
+    if (!("IntersectionObserver" in window)) return;
+    if (observador) observador.disconnect();
+    observador = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (en) {
+        if (en.isIntersecting && !listaVista) {
+          listaVista = true;
+          track("view_item_list", { item_list_id: LISTA.item_list_id, item_list_name: LISTA.item_list_name }, itensLista());
+        }
+      });
+    }, { threshold: 0.4 });
+    observador.observe($planos);
+  }
+
+  var planoModal = null;
+  $planos.addEventListener("click", function (e) {
+    var bt = e.target.closest("button");
+    if (!bt) return;
+    var i = +(bt.getAttribute("data-detalhe") || bt.getAttribute("data-comprar"));
+    var p = PLANOS[i];
+    track("select_item", comElemento({ item_list_id: LISTA.item_list_id, item_list_name: LISTA.item_list_name }, bt),
+      [item(p, { index: i, item_list_id: LISTA.item_list_id, item_list_name: LISTA.item_list_name })]);
+    if (bt.hasAttribute("data-detalhe")) abrirModal(p);
+    else escolherPlano(p, bt);
+  });
+  function abrirModal(p) {
+    planoModal = p;
+    document.getElementById("modal-titulo").textContent = p.item_name + " · " + brl(p.price);
+    document.getElementById("modal-desc").textContent = p.itens.join(" · ");
+    document.getElementById("modal").classList.add("aberto");
+    track("view_item", { currency: "BRL", value: p.price }, [item(p)]);
+  }
+  function fecharModal() { document.getElementById("modal").classList.remove("aberto"); }
+  document.getElementById("modal-fechar").addEventListener("click", fecharModal);
+  document.getElementById("modal").addEventListener("click", function (e) { if (e.target.id === "modal") fecharModal(); });
+  document.getElementById("modal-comprar").addEventListener("click", function () { fecharModal(); escolherPlano(planoModal, this); });
+
+  // ---------------- carrinho ----------------
+  function totalItens() { return arred(estado.carrinho.reduce(function (s, it) { return s + it.price * it.quantity; }, 0)); }
+  function escolherPlano(p, origem) {
+    if (estado.plano && estado.plano.item_id !== p.item_id) {
+      var antigo = estado.plano;
+      track("remove_from_cart", comElemento({ currency: "BRL", value: antigo.price }, origem), [item(antigo)]);
+      estado.carrinho = estado.carrinho.filter(function (it) { return it.item_id !== antigo.item_id; });
+    }
+    if (!estado.plano || estado.plano.item_id !== p.item_id) {
+      estado.plano = p;
+      estado.carrinho.unshift(item(p));
+      track("add_to_cart", comElemento({ currency: "BRL", value: p.price }, origem), [item(p)]);
+    }
+    location.hash = "#/checkout";
+  }
+
+  // ---------------- checkout ----------------
+  var ck = { iniciado: false, frete: null, pagto: null };
+  var $bump = document.getElementById("bump");
+  function premium() { return estado.plano && estado.plano.item_id === "PLANO-PREMIUM"; }
+  function valorFrete() { return premium() && ck.frete ? FRETE[ck.frete] : 0; }
+  function desenharResumo() {
+    var html = estado.carrinho.map(function (it) {
+      return '<div class="linha"><span>' + it.item_name + "</span><span>" + brl(it.price) + "</span></div>";
+    }).join("");
+    if (premium()) html += '<div class="linha"><span>Frete da apostila' + (ck.frete ? " (" + ck.frete + ")" : "") + "</span><span>" + (ck.frete ? brl(valorFrete()) : "a escolher") + "</span></div>";
+    html += '<div class="linha"><span>Total</span><span>' + brl(arred(totalItens() + valorFrete())) + "</span></div>";
+    document.getElementById("resumo").innerHTML = html;
+  }
+  function entrarCheckout() {
+    ck = { iniciado: false, frete: null, pagto: null };
+    document.querySelectorAll('input[name="frete"], input[name="pagto"]').forEach(function (r) { r.checked = false; });
+    $bump.checked = estado.carrinho.some(function (it) { return it.item_id === BUMP.item_id; });
+    document.getElementById("passo-frete").hidden = !premium();
+    document.getElementById("passo-frete").classList.add("bloqueado");
+    document.getElementById("passo-pagto").classList.add("bloqueado");
+    document.getElementById("titulo-pagto").textContent = (premium() ? "3" : "2") + " · Pagamento";
+    document.getElementById("btn-comprar").disabled = true;
+    desenharResumo();
+    track("view_cart", { currency: "BRL", value: totalItens() }, estado.carrinho.slice());
+  }
+  $bump.addEventListener("change", function () {
+    if ($bump.checked) {
+      estado.carrinho.push(item(BUMP));
+      track("add_to_cart", comElemento({ currency: "BRL", value: BUMP.price }, $bump), [item(BUMP)]);
+    } else {
+      estado.carrinho = estado.carrinho.filter(function (it) { return it.item_id !== BUMP.item_id; });
+      track("remove_from_cart", comElemento({ currency: "BRL", value: BUMP.price }, $bump), [item(BUMP)]);
+    }
+    desenharResumo();
+  });
+  document.getElementById("trocar-plano").addEventListener("click", function () {
+    setTimeout(function () { document.getElementById("planos").scrollIntoView(); }, 50);
+  });
+  document.getElementById("btn-continuar").addEventListener("click", function () {
+    if (!ck.iniciado) {
+      ck.iniciado = true;
+      track("begin_checkout", comElemento({ currency: "BRL", value: totalItens() }, this), estado.carrinho.slice());
+    }
+    document.getElementById(premium() ? "passo-frete" : "passo-pagto").classList.remove("bloqueado");
+  });
+  document.querySelectorAll('input[name="frete"]').forEach(function (r) {
+    r.addEventListener("change", function () {
+      ck.frete = r.value;
+      track("add_shipping_info", comElemento({ currency: "BRL", value: totalItens(), shipping_tier: r.value, shipping: FRETE[r.value] }, r), estado.carrinho.slice());
+      document.getElementById("passo-pagto").classList.remove("bloqueado");
+      desenharResumo();
+    });
+  });
+  document.querySelectorAll('input[name="pagto"]').forEach(function (r) {
+    r.addEventListener("change", function () {
+      ck.pagto = r.value;
+      track("add_payment_info", comElemento({ currency: "BRL", value: totalItens(), payment_type: r.value }, r), estado.carrinho.slice());
+      document.getElementById("btn-comprar").disabled = false;
+    });
+  });
+  document.getElementById("btn-comprar").addEventListener("click", function () {
+    var itens = estado.carrinho.slice();
+    var bruto = totalItens();
+    var desconto = ck.pagto === "pix" ? arred(bruto * 0.05) : 0;
+    var valor = arred(bruto - desconto);           // receita dos itens, sem frete
+    var frete = valorFrete();
+    var ev = track("purchase", comElemento({
+      transaction_id: "T-" + uuid().slice(0, 8).toUpperCase(),
+      value: valor, tax: arred(valor * ALIQUOTA_ISS), shipping: frete, currency: "BRL",
+      payment_type: ck.pagto, coupon: ck.pagto === "pix" ? "PIX5" : null
+    }, this), itens);
+    estado.ultimaCompra = ev; estado.pedidoReembolsado = false;
+    estado.carrinho = []; estado.plano = null;
+    location.hash = "#/obrigado";
+  });
+
+  // ---------------- obrigado + refund ----------------
+  function entrarObrigado() {
+    var c = estado.ultimaCompra.params;
+    document.getElementById("obrigado-texto").textContent =
+      "Pedido " + c.transaction_id + " · " + brl(c.value + c.shipping) + " via " + c.payment_type + ". O acesso chega no seu e-mail.";
+    document.getElementById("btn-refund").disabled = estado.pedidoReembolsado;
+  }
+  document.getElementById("btn-refund").addEventListener("click", function () {
+    var c = estado.ultimaCompra;
+    track("refund", comElemento({ transaction_id: c.params.transaction_id, value: c.params.value, tax: c.params.tax, shipping: c.params.shipping, currency: "BRL", reason: "garantia_7_dias" }, this), c.items);
+    estado.pedidoReembolsado = true;
+    this.disabled = true;
+    toast("Reembolso registrado: a receita líquida já desconta este pedido");
+  });
+
+  // ---------------- lead ----------------
+  document.getElementById("form-lead").addEventListener("submit", function (e) {
+    e.preventDefault();
+    track("generate_lead", comElemento({ lead_source: "ebook_primeiro_pipeline", currency: "BRL", value: 0 }, this));
+    this.reset();
+    toast("E-book enviado (simulado). O e-mail não foi para o evento.");
+  });
+
+  // ---------------- site_search no FAQ ----------------
+  var $busca = document.getElementById("faq-busca");
+  function filtrarFaq(termo) {
+    var n = 0;
+    document.querySelectorAll("#faq-lista details").forEach(function (d) {
+      var ok = !termo || d.textContent.toLowerCase().indexOf(termo) >= 0;
+      d.hidden = !ok; if (ok) n++;
+    });
+    document.getElementById("faq-vazio").style.display = termo && !n ? "block" : "none";
+    return n;
+  }
+  $busca.addEventListener("input", function () { filtrarFaq($busca.value.trim().toLowerCase()); });
+  $busca.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var termo = $busca.value.trim().toLowerCase();
+    if (!termo) return;
+    track("site_search", comElemento({ search_term: termo, search_results: filtrarFaq(termo), search_area: "faq" }, $busca));
+  });
+
+  // ---------------- área de membros: sign_up / login ----------------
+  function atualizarMembros() {
+    var logado = !!estado.userId;
+    document.getElementById("membros-form").hidden = logado;
+    document.getElementById("membros-logado").hidden = !logado;
+    document.getElementById("membros-titulo").textContent = logado ? "Área de membros" : "Entrar ou criar conta";
+    document.getElementById("mb-uid").textContent = estado.userId || "";
+  }
+  function autenticar(evento, botao) {
+    var email = document.getElementById("mb-email").value.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast("Digite um e-mail válido"); return; }
+    estado.userId = "u-" + hashCurto(email);
+    gravar("lp_user_id", estado.userId);
+    track(evento, comElemento({ method: "email" }, botao));
+    document.getElementById("mb-email").value = "";
+    desenharContexto(); atualizarMembros();
+  }
+  document.getElementById("btn-login").addEventListener("click", function () { autenticar("login", this); });
+  document.getElementById("btn-signup").addEventListener("click", function () { autenticar("sign_up", this); });
+  document.getElementById("btn-sair").addEventListener("click", function () {
+    estado.userId = null; gravar("lp_user_id", null); desenharContexto(); atualizarMembros();
+  });
+
+  // ---------------- mapa de calor (lê window.MAPA_CALOR; não dispara eventos) ----------------
+  var calor = { ligado: false };
+  var $calorRaiz = document.createElement("div");
+  $calorRaiz.id = "calor-raiz";
+  document.body.appendChild($calorRaiz);
+  // elementos que não rolam com a página (cabeçalho sticky e modal fixo) ganham camadas fixas na tela
+  function camadaFixa(classe) {
+    var c = document.createElement("div");
+    c.className = "calor-fixo " + classe;
+    document.body.appendChild(c);
+    return c;
+  }
+  var $calorTopo = camadaFixa("calor-fixo-topo"), $calorModal = camadaFixa("calor-fixo-modal");
+
+  function paginaAtual() { var r = rotaAtual(); return r === "landing" ? "/" : "/" + r; }
+  function pct(v) { return v === null || v === undefined ? "—" : (v * 100).toFixed(1).replace(".", ",") + "%"; }
+
+  // escala clássica de mapa de calor: azul → ciano → verde → amarelo → vermelho (256 cores)
+  var PALETA_CALOR = (function () {
+    var c = document.createElement("canvas");
+    c.width = 256; c.height = 1;
+    var g = c.getContext("2d"), grad = g.createLinearGradient(0, 0, 256, 0);
+    [[0, "#0000ff"], [0.3, "#00c8ff"], [0.5, "#00ff40"], [0.72, "#ffff00"], [1, "#ff0000"]]
+      .forEach(function (p) { grad.addColorStop(p[0], p[1]); });
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 256, 1);
+    return g.getImageData(0, 0, 256, 1).data;
+  })();
+  var ESCALA_CALOR = 0.25;            // desenha a 1/4 e estica: mais leve, e o calor já fica difuso
+  var VEU = [18, 24, 110];            // azul escuro por cima da página toda
+
+  // a Gold é por elemento: cada elemento vira alguns pontos de calor espalhados pela área dele
+  // dx/dy: rolagem da página para camadas que rolam; 0 para as camadas fixas na tela
+  function pontosDoElemento(r, intensidade, dx, dy) {
+    var colunas = Math.max(1, Math.min(6, Math.round(r.width / 60)));
+    var linhas = Math.max(1, Math.min(4, Math.round(r.height / 50)));
+    var raio = Math.max(60, Math.min(190, Math.min(r.width, r.height) * 0.9 + 50));
+    var peso = Math.max(0.12, +intensidade || 0) * 0.85 / Math.sqrt(colunas * linhas);
+    var pontos = [];
+    for (var i = 0; i < colunas; i++) {
+      for (var j = 0; j < linhas; j++) {
+        pontos.push({ x: r.left + dx + r.width * (i + 0.5) / colunas,
+                      y: r.top + dy + r.height * (j + 0.5) / linhas, raio: raio, peso: peso });
+      }
+    }
+    return pontos;
+  }
+
+  // 1º passo: cada ponto soma uma mancha difusa (só alfa). 2º passo: o alfa acumulado vira cor da paleta.
+  // teto: maior intensidade da Gold entre os elementos deste canvas (o vermelho só aparece onde a Gold diz 1)
+  function pintarCalor(alvo, esquerda, topo, largura, altura, pontos, comVeu, teto) {
+    if (!pontos.length) return;
+    var w = Math.max(1, Math.ceil(largura * ESCALA_CALOR)), h = Math.max(1, Math.ceil(altura * ESCALA_CALOR));
+    var cv = document.createElement("canvas");
+    cv.className = "calor-canvas";
+    cv.width = w; cv.height = h;
+    cv.style.left = esquerda + "px"; cv.style.top = topo + "px";
+    cv.style.width = largura + "px"; cv.style.height = altura + "px";
+    var g = cv.getContext("2d");
+    pontos.forEach(function (p) {
+      var x = (p.x - esquerda) * ESCALA_CALOR, y = (p.y - topo) * ESCALA_CALOR, raio = p.raio * ESCALA_CALOR;
+      var grad = g.createRadialGradient(x, y, 0, x, y, raio);
+      grad.addColorStop(0, "rgba(0,0,0," + Math.min(1, p.peso) + ")");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grad;
+      g.fillRect(x - raio, y - raio, raio * 2, raio * 2);
+    });
+    var img = g.getImageData(0, 0, w, h), d = img.data, maximo = 0;
+    for (var m = 3; m < d.length; m += 4) if (d[m] > maximo) maximo = d[m];
+    var ganho = maximo ? 255 * Math.max(0.12, Math.min(1, teto)) / maximo : 1;   // o mais quente vira a cor da sua intensidade
+    for (var k = 0; k < d.length; k += 4) {
+      var a = Math.min(255, Math.round(d[k + 3] * ganho)), o = a * 4, t = Math.min(1, a / 40);   // t: transição do véu para a paleta
+      if (comVeu) {
+        d[k] = VEU[0] + (PALETA_CALOR[o] - VEU[0]) * t;
+        d[k + 1] = VEU[1] + (PALETA_CALOR[o + 1] - VEU[1]) * t;
+        d[k + 2] = VEU[2] + (PALETA_CALOR[o + 2] - VEU[2]) * t;
+        d[k + 3] = Math.min(235, 150 + a);
+      } else {
+        d[k] = PALETA_CALOR[o]; d[k + 1] = PALETA_CALOR[o + 1]; d[k + 2] = PALETA_CALOR[o + 2];
+        d[k + 3] = a < 6 ? 0 : Math.min(220, a * 2 + 40);
+      }
+    }
+    g.putImageData(img, 0, 0);
+    alvo.appendChild(cv);
+  }
+
+  function etiquetaCalor(r, texto, alvo, dx, dy) {
+    var e = document.createElement("span");
+    e.className = "calor-etiqueta";
+    e.style.left = (r.left + dx) + "px";
+    e.style.top = (r.bottom + dy + 2) + "px";
+    e.textContent = texto;
+    alvo.appendChild(e);
+  }
+
+  function desenharCalor() {
+    $calorRaiz.innerHTML = $calorTopo.innerHTML = $calorModal.innerHTML = "";
+    $calorRaiz.style.width = "0px";
+    $calorRaiz.style.height = "0px";
+    if (!calor.ligado || !window.MAPA_CALOR) return;
+    // mede a página sem o overlay e prende o overlay nesse tamanho (overflow: hidden):
+    // assim ele nunca aumenta a rolagem nem muda os marcos do evento scroll
+    var doc = document.documentElement;
+    $calorRaiz.style.width = doc.scrollWidth + "px";
+    $calorRaiz.style.height = doc.scrollHeight + "px";
+    var pagina = paginaAtual(), porElemento = {};
+    (window.MAPA_CALOR.cliques || []).forEach(function (l) { if (l.pagina === pagina) porElemento[l.element_id] = l; });
+    // três grupos: a página (rola, em coordenadas da página), o cabeçalho e o modal (fixos, em coordenadas da tela)
+    var grupos = {
+      pagina: { alvo: $calorRaiz, dx: window.scrollX, dy: window.scrollY, pontos: [], teto: 0 },
+      topo: { alvo: $calorTopo, dx: 0, dy: 0, pontos: [], teto: 0 },
+      modal: { alvo: $calorModal, dx: 0, dy: 0, pontos: [], teto: 0, caixa: null }
+    };
+    document.querySelectorAll("[data-heat]").forEach(function (el) {
+      var l = porElemento[el.getAttribute("data-heat")];
+      var r = el.getBoundingClientRect();
+      if (!l || !r.width || !r.height) return;          // sem dado, escondido ou de outra tela
+      var gr = el.closest("#modal") ? grupos.modal : el.closest(".topo") ? grupos.topo : grupos.pagina;
+      if (gr === grupos.modal) gr.caixa = el.closest(".modal").getBoundingClientRect();
+      Array.prototype.push.apply(gr.pontos, pontosDoElemento(r, l.intensidade, gr.dx, gr.dy));
+      gr.teto = Math.max(gr.teto, +l.intensidade || 0);
+      etiquetaCalor(r, pct(l.taxa_clique), gr.alvo, gr.dx, gr.dy);
+    });
+    var p = grupos.pagina, t = grupos.topo, m = grupos.modal;
+    pintarCalor(p.alvo, 0, 0, doc.scrollWidth, doc.scrollHeight, p.pontos, true, p.teto);
+    pintarCalor(t.alvo, 0, 0, window.innerWidth, window.innerHeight, t.pontos, false, t.teto);
+    if (m.caixa) pintarCalor(m.alvo, m.caixa.left, m.caixa.top, m.caixa.width, m.caixa.height, m.pontos, false, m.teto);
+    if (pagina === "/") desenharRolagem();
+  }
+
+  function desenharRolagem() {
+    var linhas = (window.MAPA_CALOR.rolagem || []).filter(function (l) { return l.pagina === "/"; })
+      .sort(function (a, b) { return a.marco - b.marco; });
+    if (!linhas.length) return;
+    var vista = document.querySelector('[data-view="landing"]').getBoundingClientRect();
+    var altura = document.documentElement.scrollHeight, janela = window.innerHeight;
+    // marco m% = a pessoa rolou m% do percurso: viu até m/100*(altura - janela) + janela
+    function y(m) { return Math.min(altura, (m / 100) * Math.max(0, altura - janela) + janela); }
+    var faixa = document.createElement("div");
+    faixa.className = "calor-faixa";
+    faixa.style.left = (vista.right + window.scrollX - 72) + "px";
+    faixa.style.top = "0px";
+    faixa.style.height = altura + "px";
+    var paradas = linhas.map(function (l) {
+      return "rgba(5,8,40," + (0.75 * (1 - (l.pct_sessoes || 0))).toFixed(3) + ") " + (y(l.marco) / altura * 100).toFixed(2) + "%";
+    });
+    faixa.style.background = "linear-gradient(to bottom, " + paradas.join(", ") + ")";
+    linhas.forEach(function (l) {
+      if (l.marco === 0) return;
+      var m = document.createElement("span");
+      m.className = "calor-marco";
+      m.style.top = y(l.marco) + "px";
+      m.textContent = l.marco + "% · " + pct(l.pct_sessoes);
+      faixa.appendChild(m);
+    });
+    $calorRaiz.appendChild(faixa);
+  }
+
+  document.getElementById("mapa-calor").addEventListener("click", function () {
+    if (!window.MAPA_CALOR) {
+      toast("Ainda não há mapa. Rode o job de exportação do mapa de calor (R11) para gerar site/mapa_calor.js e recarregue a página.");
+      return;
+    }
+    calor.ligado = !calor.ligado;
+    this.classList.toggle("ligado", calor.ligado);
+    desenharCalor();
+    if (!calor.ligado) return;
+    if (!(window.MAPA_CALOR.cliques || []).length) {
+      toast("O mapa não tem cliques: a landing foi gerada antes do element_id. Rode o gerador de novo e o pipeline inteiro.");
+    } else {
+      toast("Mapa de calor gerado em " + window.MAPA_CALOR.gerado_em);
+    }
+  });
+  var tCalor;
+  function redesenharCalorDepois() { clearTimeout(tCalor); tCalor = setTimeout(desenharCalor, 120); }
+  window.addEventListener("resize", redesenharCalorDepois);
+  window.addEventListener("hashchange", redesenharCalorDepois);
+  document.getElementById("alternar-painel").addEventListener("click", redesenharCalorDepois);
+  // conteúdo que muda de tamanho (filtro do FAQ, resumo do pedido, login, modal aberto) → redesenha
+  if ("ResizeObserver" in window) {
+    var observadorCalor = new ResizeObserver(redesenharCalorDepois);
+    var observar = function (el) { if (el) observadorCalor.observe(el); };
+    observar(document.querySelector("main"));
+    observar(document.querySelector("#modal .modal"));
+  }
+  // garantia extra: toda interação (clique, digitação, troca de opção) agenda um redesenho
+  ["click", "input", "change"].forEach(function (tipo) {
+    document.addEventListener(tipo, function () { if (calor.ligado) redesenharCalorDepois(); }, true);
+  });
+
+  irPara(true);
+})();
+</script>
+</body>
+</html>

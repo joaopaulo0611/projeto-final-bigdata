@@ -1,0 +1,37 @@
+# Variáveis do S3 (floci) usadas pelo app e pelo explorador.
+x-ambiente-s3: &ambiente-s3
+  AWS_ENDPOINT_URL: http://floci:4566
+  AWS_S3_BUCKET: datalake-tracking
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  AWS_DEFAULT_REGION: us-east-1
+
+services:
+  floci:
+    image: floci/floci:latest
+    container_name: floci-datalake-tracking
+    ports:
+      - "4566:4566"
+
+  app:
+    build: .
+    image: datalake-tracking-app
+    working_dir: /projeto
+    volumes:
+      - .:/projeto
+    environment: *ambiente-s3
+    depends_on:
+      - floci
+
+  explorador:
+    image: datalake-tracking-app
+    working_dir: /projeto
+    volumes:
+      - .:/projeto
+    environment:
+      <<: *ambiente-s3
+    command: streamlit run explorador/app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true --browser.gatherUsageStats false --client.showErrorDetails none
+    ports:
+      - "8501:8501"
+    depends_on:
+      - floci
