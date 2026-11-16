@@ -17,7 +17,7 @@ Todas as camadas ficam no bucket datalake-tracking, em Parquet, gravadas pelo Sp
 | RELATORIO.md | o relatório final: respostas às perguntas, com os números da Gold, e a seção de qualidade do dado |
 | pipeline/ | o código PySpark: um job por camada e o script que roda todos em sequência |
 | pipeline/README.md | como rodar o pipeline e o que cada job lê e grava |
-| Entrega/ | pacote de entrega: cópia do código, do relatório e os prints de execução de cada camada |
+| evidencias/ | prints de cada camada no S3, no catálogo, na execução dos jobs e no Athena, e o mapa de calor aceso no site |
 | site/ | a landing page de exemplo; o botão Mapa de calor mostra a Gold de cliques e de rolagem |
 | gerador/ | simula o coletor e popula a landing com 14 dias de eventos |
 | docs/ | enunciado e contrato do evento |
