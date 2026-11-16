@@ -1,70 +1,60 @@
-# DadosPro — projeto final de engenharia de dados
+# DadosPro: datalake de tracking
 
-Uma empresa vende um curso online por uma landing page de conversão. Uma **landing page** é uma página única, feita para convencer o visitante a fazer uma ação: aqui, comprar o curso DadosPro ou baixar um e-book.
+Projeto final de engenharia de dados. Uma empresa vende um curso online por uma landing page, e cada interação do visitante (abrir a página, rolar, dar play no vídeo, comprar) vira um evento de tracking gravado num bucket S3 em arquivos JSON Lines.
 
-Cada interação do visitante (abrir a página, rolar, dar play no vídeo, comprar) vira um **evento de tracking**: um pequeno registro em JSON que diz o que aconteceu, quando e com quem. Esses eventos são gravados num **bucket S3**, que é uma "pasta na nuvem" para guardar arquivos.
+O projeto constrói um datalake em arquitetura medalhão que transforma esses eventos em respostas de negócio:
 
-O projeto é construir o **datalake em arquitetura medalhão** que transforma esses eventos em respostas de negócio: funil de compra, engajamento, receita líquida e previsão de compra.
+- Bronze: cópia fiel do que chegou na landing, com a origem de cada linha.
+- Silver: dado limpo, sem duplicatas, validado, com sessões e identidades resolvidas.
+- Gold: tabelas agregadas que respondem às perguntas da empresa sobre funil, engajamento e receita.
 
-- **Datalake** é um lugar central onde os dados ficam guardados como arquivos, prontos para análise.
-- **Arquitetura medalhão** organiza esse datalake em camadas, do dado mais cru ao mais refinado: Bronze (cópia fiel do que chegou), Silver (dado limpo e organizado) e Gold (tabelas que respondem perguntas do negócio).
+Todas as camadas ficam no bucket datalake-tracking, em Parquet, gravadas pelo Spark com caminhos s3a://.
 
-> **Pense assim:** o projeto é uma **fábrica de dados**. Os eventos são a matéria-prima que chega pelo portão (a landing). Cada camada é uma linha de produção que entrega algo mais acabado para a seguinte, até o produto final (as tabelas Gold), que é o que o gerente da empresa consegue usar para decidir.
+## Onde está cada coisa
 
-```mermaid
-flowchart LR
-    V["👤 Visitante<br/>na landing page"] -->|cada clique vira<br/>um evento| L["landing/<br/>eventos brutos"]
-    L --> B["🥉 Bronze<br/>cópia fiel"]
-    B --> S["🥈 Silver<br/>dado limpo"]
-    S --> G["🥇 Gold<br/>respostas do negócio"]
-    G --> R["📊 Relatório<br/>e mapa de calor"]
-```
-
-O desenho mostra o caminho de um evento: nasce no clique do visitante, entra pela landing e é refinado camada a camada até virar resposta.
-
-Os termos novos estão explicados no [glossário do enunciado](docs/ENUNCIADO.md#glossário).
-
-## O que há aqui
-
-A tabela abaixo mostra as pastas principais do repositório.
-
-| Pasta | O que é |
+| Arquivo ou pasta | O que é |
 | --- | --- |
-| [`site/`](site/index.html) | a landing page de exemplo. Abra no navegador, navegue e veja cada evento nascer no painel lateral. O botão **Mapa de calor** do painel mostra, por cima da página, a sua Gold de cliques e de rolagem (requisito R11) |
-| [`gerador/`](gerador/README.md) | o coletor simulado: popula o bucket com 14 dias de eventos, inclusive com defeitos |
-| [`pipeline/`](pipeline/README.md) | onde o datalake é construído |
-| [`explorador/`](explorador/README.md) | um console de estudo no estilo do S3, do Glue e do Athena (http://localhost:8501): ver os arquivos de todos os buckets, o catálogo de tabelas, rodar os seus jobs, juntá-los em **workflows** e fazer consultas SQL. Tem tutorial em cada tela e opções de acessibilidade |
-| `docs/` | [enunciado](docs/ENUNCIADO.md) e [contrato do evento](docs/CONTRATO_EVENTO.md) |
+| RELATORIO.md | o relatório final: respostas às perguntas, com os números da Gold, e a seção de qualidade do dado |
+| pipeline/ | o código PySpark: um job por camada e o script que roda todos em sequência |
+| pipeline/README.md | como rodar o pipeline e o que cada job lê e grava |
+| Entrega/ | pacote de entrega: cópia do código, do relatório e os prints de execução de cada camada |
+| site/ | a landing page de exemplo; o botão Mapa de calor mostra a Gold de cliques e de rolagem |
+| gerador/ | simula o coletor e popula a landing com 14 dias de eventos |
+| docs/ | enunciado e contrato do evento |
+| explorador/ | console local para ver o bucket, rodar os jobs e fazer consultas SQL |
 
-Em outras palavras: `site/` e `gerador/` produzem os dados; você escreve o código em `pipeline/`; `docs/` diz o que construir.
+## Os jobs
 
-```mermaid
-flowchart TB
-    subgraph PRONTO["Vem pronto (você só usa)"]
-        site["site/<br/>página de exemplo"]
-        gerador["gerador/<br/>simula 14 dias de visitas"]
-        comum["pipeline/comum.py<br/>peças reutilizáveis"]
-        explorador["explorador/<br/>console: olhar o bucket,<br/>rodar jobs e workflows"]
-        docs["docs/<br/>enunciado e contrato"]
-    end
-    subgraph SEU["Você constrói"]
-        jobs["pipeline/seus_jobs.py<br/>Bronze, Silver, Golds"]
-        workflow["pipeline/workflows/*.json<br/>a ordem dos jobs (opcional)"]
-        relatorio["RELATORIO.md"]
-    end
-    gerador -->|grava eventos| bucket[("bucket S3<br/>datalake-tracking")]
-    site -->|exporta JSONL| bucket
-    comum --> jobs
-    jobs <-->|lê e grava pelo Spark| bucket
-    explorador -->|lê, e grava só pelos seus jobs| bucket
-    workflow -.->|ordem| jobs
-    docs -.->|diz o que construir| jobs
+| Job | Lê | Grava |
+| --- | --- | --- |
+| bronze.py | landing/ | bronze/, append-only, com arquivo_origem e ingestao_ts |
+| silver.py | bronze/ | silver/ (eventos válidos), silver/itens e silver/eventos_rejeitados |
+| gold_funil.py | silver/ | gold/funil_compra e gold/funil_lead |
+| gold_engajamento.py | silver/ | gold/sessoes, gold/retencao_video, gold/buscas_faq e gold/saidas_downloads |
+| gold_receita.py | silver/ | gold/receita_diaria, gold/taxa_reembolso, gold/adesao_order_bump e gold/lead_para_compra |
+| gold_mapa_calor.py | silver/ | gold/mapa_calor_cliques e gold/mapa_calor_rolagem |
+| exportar_mapa_calor.py | gold/mapa_calor_* | site/mapa_calor.js |
+
+O job Gold de ML (pergunta 4) foi dispensado pelo professor em sala. Por isso o pipeline tem sete jobs.
+
+## Como rodar
+
+Tudo roda nos contêineres Docker do projeto. Não é preciso instalar nada além do Docker. Na raiz do repositório:
+
+```bash
+docker compose up -d floci
+docker compose run --rm app python gerador/gerar_eventos.py
+docker compose run --rm app python pipeline/rodar_pipeline.py
 ```
 
-O diagrama separa o que já existe do que é seu: as setas mostram quem grava e quem lê o bucket.
+O primeiro comando sobe o S3 local, o segundo popula a landing e o terceiro roda os sete jobs em ordem. Depois, abra site/index.html no navegador e clique em Mapa de calor, no painel lateral.
 
-## Começar
+Para rodar um job sozinho:
 
-1. Prepare o ambiente: [SETUP.md](SETUP.md). Ele explica o Docker passo a passo, mesmo que você nunca tenha usado.
-2. Popule a landing: `docker compose run --rm app python gerador/gerar_eventos.py`. Esse comando cria os eventos simulados e grava no S3 local.
-3. Leia o [enunciado](docs/ENUNCIADO.md) e construa o pipeline em `pipeline/` (veja [pipeline/README.md](pipeline/README.md)). O enunciado tem uma seção "Por onde começar" com a ordem sugerida de trabalho.
+```bash
+docker compose run --rm app python pipeline/silver.py
+```
+
+Cada job confere se a camada anterior existe e, se não existir, para e diz qual job rodar antes.
+
+A preparação do ambiente está explicada no SETUP.md.
